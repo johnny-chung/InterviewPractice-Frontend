@@ -1,117 +1,89 @@
-export type ResumeStatus = "queued" | "processing" | "ready" | "error";
+﻿export type EntityStatus = "queued" | "processing" | "ready" | "error";
+export type MatchJobStatus = "queued" | "running" | "completed" | "failed";
 
-export interface ResumeSummary {
+export interface ResumeSummaryResponse {
+  id: string;
+  filename: string | null;
+  mime_type: string | null;
+  status: EntityStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ResumeSkillResponse {
+  id: string;
+  skill: string;
+  experience_years: number | null;
+  proficiency: number | null;
+  created_at: string;
+}
+
+export interface ResumeDetailResponse {
   id: string;
   filename: string | null;
   mimeType: string | null;
-  status: ResumeStatus;
+  status: EntityStatus;
+  parsedData: unknown;
+  skills: ResumeSkillResponse[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ResumeProfile {
-  name?: string | null;
-  totalExperienceYears?: number | null;
-  summary?: string | null;
-  [key: string]: unknown;
-}
-
-export interface ResumeParsedSummary {
-  sections?: Record<string, string | string[]> | null;
-  profile?: ResumeProfile | null;
-  statistics?: Record<string, unknown> | null;
-  message?: string;
-  [key: string]: unknown;
-}
-
-export interface CandidateSkill {
-  id: string;
-  skill: string;
-  experienceYears: number | null;
-  proficiency: number | null;
-  createdAt: string;
-}
-
-export interface ResumeDetail extends ResumeSummary {
-  parsedData: ResumeParsedSummary | null;
-  skills: CandidateSkill[];
-}
-
-export type JobStatus = ResumeStatus;
-
-export interface JobSummary {
+export interface JobSummaryResponse {
   id: string;
   title: string | null;
   source: "file" | "text" | null;
-  status: JobStatus;
-  createdAt: string;
-  updatedAt: string;
+  status: EntityStatus;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface JobParsedSummary {
-  highlights?: string[] | string | null;
-  overview?: string | null;
-  onet?: unknown;
-  message?: string;
-  [key: string]: unknown;
-}
-
-export interface JobRequirement {
+export interface JobRequirementResponse {
   id: string;
   skill: string;
   importance: number | null;
-  inferred: boolean;
-  createdAt: string;
+  inferred: boolean | 0 | 1;
+  created_at: string;
 }
 
-export interface JobDetail extends JobSummary {
-  parsedData: JobParsedSummary | null;
-  requirements: JobRequirement[];
-}
-
-export type MatchJobStatus = "queued" | "running" | "completed" | "failed";
-
-export interface MatchJobSummary {
+export interface JobDetailResponse {
   id: string;
-  resumeId: string;
-  jobId: string;
-  status: MatchJobStatus;
-  resultId: string | null;
+  title: string | null;
+  source: "file" | "text" | null;
+  status: EntityStatus;
+  parsedData: unknown;
+  requirements: JobRequirementResponse[];
   createdAt: string;
   updatedAt: string;
-  errorMessage: string | null;
 }
 
-export interface RequirementAnalysis {
-  requirement: string | null;
+export interface MatchJobResponse {
+  id: string;
+  resume_id: string;
+  job_id: string;
+  status: MatchJobStatus;
+  result_id: string | null;
+  created_at: string;
+  updated_at: string;
+  error_message: string | null;
+}
+
+export interface RequirementSummaryResponse {
+  skill: string | null;
   importance: number | null;
+  candidate_has_experience: boolean;
   similarity: number;
-  matchedSkill: string | null;
+  matched_skill: string | null;
   inferred: boolean;
-}
-
-export interface RequirementSummary extends RequirementAnalysis {
-  candidateHasExperience: boolean;
   comments: string;
 }
 
-export interface MatchCandidateSummary {
-  name: string | null;
-  skills: string[];
-  experienceYears: number | null;
-  degrees: string[];
-  certifications: string[];
-  summary: string | null;
-}
-
-export interface MatchSummary {
-  overallMatchScore: number;
-  candidate: MatchCandidateSummary | null;
-  requirements: RequirementSummary[];
-  strengths: string[];
-  weaknesses: string[];
-  jobHighlights: string[] | string | null;
-  rawDetails: RequirementAnalysis[];
+export interface RequirementAnalysisResponse {
+  requirement: string | null;
+  importance: number | null;
+  similarity: number;
+  matched_skill: string | null;
+  inferred: boolean;
 }
 
 export interface MatchDetailResponse {
@@ -123,7 +95,22 @@ export interface MatchDetailResponse {
   match?: {
     id: string;
     score: number;
-    summary: MatchSummary;
+    summary: {
+      overall_match_score: number;
+      candidate: {
+        name: string | null;
+        skills: string[];
+        experience_years: number | null;
+        degrees: string[];
+        certifications: string[];
+        summary: string | null;
+      } | null;
+      requirements: RequirementSummaryResponse[];
+      strengths: Array<string | Record<string, unknown>>;
+      weaknesses: Array<string | Record<string, unknown>>;
+      job_highlights: Array<string | Record<string, unknown>> | string | null;
+      raw_details: RequirementAnalysisResponse[];
+    };
     completedAt: string;
   };
 }
