@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/auth/auth";
 import { AuthProvider } from "@/components/providers/session-provider";
+import { RealtimeProvider } from "@/components/providers/realtime-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Layer1 Console",
-  description: "Manage uploads, matches, and subscriptions for Self-Interview AI",
+  description:
+    "Manage uploads, matches, and subscriptions for Self-Interview AI",
 };
 
 export default async function RootLayout({
@@ -30,7 +32,9 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background text-foreground antialiased`}
       >
-        <AuthProvider session={session}>{children}</AuthProvider>
+        <AuthProvider session={session}>
+          <RealtimeProvider>{children}</RealtimeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

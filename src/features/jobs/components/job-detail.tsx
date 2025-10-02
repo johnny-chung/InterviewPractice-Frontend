@@ -14,6 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { format } from "date-fns";
 
 import type { JobDetail } from "../data";
@@ -33,9 +39,14 @@ export function JobDetailPanel({ job }: Props) {
     );
   }
 
-  const highlights = job.parsedData?.highlights ?? [];
+  // Highlights removed per new spec.
   const overviewText = job.parsedData?.overview ?? null;
   const overviewEntries = job.parsedData?.overviewEntries ?? [];
+
+  // Derive categories: explicit requirements, inferred (nice to have), soft skills
+  const explicitRequirements = job.requirements.filter((r) => !r.inferred);
+  const inferredRequirements = job.requirements.filter((r) => r.inferred);
+  const softSkills = job.softSkills || [];
 
   return (
     <div className="space-y-4">
@@ -72,82 +83,181 @@ export function JobDetailPanel({ job }: Props) {
         </CardContent>
       </Card>
 
-      {highlights.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Highlights</CardTitle>
-            <CardDescription>
-              Key requirements identified in the description.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="list-disc space-y-2 pl-4 text-sm text-muted-foreground">
-              {highlights.map((item, index) => (
-                <li key={index}>
-                  {typeof item === "string" ? item : JSON.stringify(item)}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      ) : null}
+      <Accordion
+        type="multiple"
+        defaultValue={["requirements"]}
+        className="space-y-4"
+      >
+        <AccordionItem value="requirements">
+          <Card className="border">
+            <CardHeader className="space-y-0">
+              <AccordionTrigger className="py-0">
+                <div className="flex flex-col items-start text-left">
+                  <CardTitle className="text-base">Requirements</CardTitle>
+                  <CardDescription>
+                    Explicit skills extracted directly from the description.
+                  </CardDescription>
+                </div>
+              </AccordionTrigger>
+            </CardHeader>
+            <AccordionContent>
+              <CardContent className="pt-0">
+                {explicitRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No explicit requirements parsed yet.
+                  </p>
+                ) : (
+                  <div
+                    className={
+                      explicitRequirements.length > 12
+                        ? "max-h-[520px] overflow-y-auto pr-1"
+                        : undefined
+                    }
+                    data-scroll={
+                      explicitRequirements.length > 12 ? "true" : "false"
+                    }
+                  >
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Skill</TableHead>
+                          <TableHead>Importance</TableHead>
+                          {/* Source hidden per spec */}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {explicitRequirements.map((req) => (
+                          <TableRow key={req.id}>
+                            <TableCell className="font-medium">
+                              {req.skill}
+                            </TableCell>
+                            <TableCell>
+                              {req.importance != null
+                                ? req.importance.toFixed(2)
+                                : "-"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Requirements</CardTitle>
-          <CardDescription>
-            {job.requirements.length > 0
-              ? "Sorted by importance to highlight explicit vs inferred skills."
-              : "No requirements parsed yet."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {job.requirements.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Requirements will appear when parsing completes.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Skill</TableHead>
-                  <TableHead>Importance</TableHead>
-                  <TableHead>Source</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {job.requirements.map((req) => (
-                  <TableRow key={req.id}>
-                    <TableCell className="font-medium">{req.skill}</TableCell>
-                    <TableCell>
-                      {req.importance != null ? req.importance.toFixed(2) : "-"}
-                    </TableCell>
-                    <TableCell>
-                      {req.inferred ? "Inferred" : "Explicit"}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+        <AccordionItem value="nice-to-have">
+          <Card className="border">
+            <CardHeader className="space-y-0">
+              <AccordionTrigger className="py-0">
+                <div className="flex flex-col items-start text-left">
+                  <CardTitle className="text-base">Nice to Have</CardTitle>
+                  <CardDescription>
+                    Inferred additional skills (importance hidden).
+                  </CardDescription>
+                </div>
+              </AccordionTrigger>
+            </CardHeader>
+            <AccordionContent>
+              <CardContent className="pt-0">
+                {inferredRequirements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No inferred skills above threshold.
+                  </p>
+                ) : (
+                  <div
+                    className={
+                      inferredRequirements.length > 12
+                        ? "max-h-[520px] overflow-y-auto pr-1"
+                        : undefined
+                    }
+                    data-scroll={
+                      inferredRequirements.length > 12 ? "true" : "false"
+                    }
+                  >
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Skill</TableHead>
+                          {/* Importance & Source hidden */}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {inferredRequirements.map((req) => (
+                          <TableRow key={req.id}>
+                            <TableCell className="font-medium">
+                              {req.skill}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
 
-      {job.parsedData?.onet ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>O*NET insights</CardTitle>
-            <CardDescription>
-              Summary of inferred competencies sourced from O*NET.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <pre className="max-h-52 overflow-auto whitespace-pre-wrap rounded-lg bg-muted/50 p-4 text-xs">
-              {JSON.stringify(job.parsedData.onet, null, 2)}
-            </pre>
-          </CardContent>
-        </Card>
-      ) : null}
+        <AccordionItem value="soft-skills">
+          <Card className="border">
+            <CardHeader className="space-y-0">
+              <AccordionTrigger className="py-0">
+                <div className="flex flex-col items-start text-left">
+                  <CardTitle className="text-base">Soft Skills</CardTitle>
+                  <CardDescription>
+                    Interpersonal or cognitive competencies.
+                  </CardDescription>
+                </div>
+              </AccordionTrigger>
+            </CardHeader>
+            <AccordionContent>
+              <CardContent className="pt-0">
+                {softSkills.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No soft skills extracted yet.
+                  </p>
+                ) : (
+                  <div
+                    className={
+                      softSkills.length > 12
+                        ? "max-h-[520px] overflow-y-auto pr-1"
+                        : undefined
+                    }
+                    data-scroll={softSkills.length > 12 ? "true" : "false"}
+                  >
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Skill</TableHead>
+                          <TableHead>Score</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {softSkills.map((s, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-medium">
+                              {s.skill}
+                            </TableCell>
+                            <TableCell>
+                              {s.importance != null
+                                ? s.importance.toFixed(2)
+                                : s.value != null
+                                ? s.value?.toString()
+                                : "-"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }

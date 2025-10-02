@@ -46,6 +46,14 @@ export interface JobRequirementResponse {
   created_at: string;
 }
 
+export interface JobSoftSkillResponse {
+  id?: string; // May be undefined if coming directly from Python prior to persistence
+  skill: string;
+  value?: number | null; // normalized (0-1)
+  importance?: number | null; // legacy naming fallback
+  created_at?: string;
+}
+
 export interface JobDetailResponse {
   id: string;
   title: string | null;
@@ -53,6 +61,7 @@ export interface JobDetailResponse {
   status: EntityStatus;
   parsedData: unknown;
   requirements: JobRequirementResponse[];
+  soft_skills?: JobSoftSkillResponse[];
   createdAt: string;
   updatedAt: string;
 }

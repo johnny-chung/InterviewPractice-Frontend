@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import type { JobSummary } from "../data";
+import { getJobs } from "../data";
 import { getSocket } from "@/services/realtime";
 import { JobList } from "./job-list";
 
@@ -13,58 +14,65 @@ interface Props {
 
 export function JobListRealtime({ initialItems, selectedId, token }: Props) {
   const [items, setItems] = useState<JobSummary[]>(initialItems);
-  const tokenRef = useRef(token);
+  const tokenRef = useRef<string | null | undefined>(token);
   tokenRef.current = token;
 
   useEffect(() => {
-    if (!tokenRef.current) return; // No auth token => skip realtime.
+    if (!tokenRef.current) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[jobs] realtime skipped: no token yet");
+      }
+      return;
+    }
     const socket = getSocket(tokenRef.current);
+    let inFlight = false;
+    let cancelled = false;
 
-    function onUpdate(payload: {
-      id: string;
-      status: string;
-      title?: string | null;
-      createdAt?: string;
-      updatedAt: string;
-    }) {
-      setItems((prev) => {
-        const idx = prev.findIndex((j) => j.id === payload.id);
-        if (idx === -1) {
-          // Insert new job (fallback) then sort by createdAt desc.
-          const createdAt = payload.createdAt || payload.updatedAt;
-          const next: JobSummary = {
-            id: payload.id,
-            title: payload.title ?? "Untitled job",
-            source: null,
-            status: payload.status,
-            createdAt,
-            updatedAt: payload.updatedAt,
-          };
-          return [next, ...prev].sort((a, b) =>
-            b.createdAt.localeCompare(a.createdAt)
+    const fullRefresh = async (reason: string, context?: any) => {
+      if (cancelled || !tokenRef.current) return;
+      const started = Date.now();
+      try {
+        inFlight = true;
+        const list = await getJobs(tokenRef.current);
+        if (!cancelled) setItems(list);
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            `[jobs] list refreshed (${reason}) in ${Date.now() - started}ms`,
+            { count: list.length, context }
           );
         }
-        const current = prev[idx];
-        // Ignore stale events.
-        if (current.updatedAt && current.updatedAt >= payload.updatedAt)
-          return prev;
-        const updated: JobSummary = {
-          ...current,
-          title: payload.title ?? current.title,
-          status: payload.status,
-          updatedAt: payload.updatedAt,
-        };
-        const clone = [...prev];
-        clone[idx] = updated;
-        return clone;
-      });
-    }
-
-    socket.on("job:update", onUpdate);
-    return () => {
-      socket.off("job:update", onUpdate);
+      } catch (e) {
+        if (process.env.NODE_ENV !== "production") {
+          console.warn(`[jobs] list refresh failed (${reason})`, e);
+        }
+      } finally {
+        inFlight = false;
+      }
     };
-  }, []);
+
+    const handler = (payload: any) => {
+      if (process.env.NODE_ENV !== "production") {
+        console.log(
+          "[jobs] job:update received -> triggering full refresh",
+          payload
+        );
+      }
+      if (!inFlight) fullRefresh("job:update", { jobId: payload?.id });
+    };
+
+    socket.on("job:update", handler);
+    fullRefresh("initial");
+
+    return () => {
+      cancelled = true;
+      socket.off("job:update", handler);
+    };
+  }, []); // empty deps: single subscription
+
+  // If server sends a new initialItems set due to navigation, allow a hard replace.
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   return <JobList items={items} selectedId={selectedId} />;
 }

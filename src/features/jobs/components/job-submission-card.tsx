@@ -4,7 +4,13 @@ import { useState, useTransition } from "react";
 
 import { submitJobFromFile, submitJobFromText } from "../actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,10 +40,15 @@ export function JobSubmissionCard() {
     <Card>
       <CardHeader>
         <CardTitle>Submit a job description</CardTitle>
-        <CardDescription>Upload a file or paste raw text to extract requirements.</CardDescription>
+        <CardDescription>
+          Upload a file or paste raw text to extract requirements.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={mode} onValueChange={(value) => setMode(value as "text" | "file")}> 
+        <Tabs
+          value={mode}
+          onValueChange={(value) => setMode(value as "text" | "file")}
+        >
           <TabsList>
             <TabsTrigger value="text">Paste text</TabsTrigger>
             <TabsTrigger value="file">Upload file</TabsTrigger>
@@ -50,8 +61,12 @@ export function JobSubmissionCard() {
                 handleSubmit(formData);
               }}
             >
-              <Input name="title" placeholder="Job title (optional)" />
-              <Textarea name="description_text" placeholder="Paste the job description here" rows={8} />
+              <Input name="title" placeholder="Job title" required />
+              <Textarea
+                name="description_text"
+                placeholder="Paste the job description here"
+                rows={8}
+              />
               <Button type="submit" disabled={pending}>
                 {pending ? "Submitting..." : "Submit job"}
               </Button>
@@ -65,7 +80,7 @@ export function JobSubmissionCard() {
                 handleSubmit(formData);
               }}
             >
-              <Input name="title" placeholder="Job title (optional)" />
+              <Input name="title" placeholder="Job title" required />
               <Input type="file" name="file" accept=".pdf,.doc,.docx,.txt" />
               <Button type="submit" disabled={pending}>
                 {pending ? "Uploading..." : "Upload job file"}

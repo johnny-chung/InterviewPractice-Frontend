@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth/auth";
 import { DashboardShell } from "@/features/dashboard/dashboard-shell";
+import { SignOutButton } from "@/components/common/signout-button";
 
 export const dynamic = "force-dynamic";
 
@@ -21,12 +22,17 @@ export default async function DashboardPage({
   return (
     <main className="mx-auto max-w-6xl space-y-10 px-6 py-10">
       <header className="space-y-1">
-        <p className="text-sm text-muted-foreground">
-          Welcome back{session.user?.name ? `, ${session.user.name}` : ""}
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Layer1 operations console
-        </h1>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              Welcome back{session.user?.name ? `, ${session.user.name}` : ""}
+            </p>
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Layer1 operations console
+            </h1>
+          </div>
+          <SignOutButton />
+        </div>
         <p className="text-sm text-muted-foreground">
           Monitor uploads, review AI summaries, and trigger match comparisons
           powered by the Layer1 backend and Python worker.

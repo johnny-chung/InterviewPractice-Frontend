@@ -11,11 +11,18 @@
 //   * Throws Error with best-effort extracted message on non-ok responses.
 //   * Logs duration for mutating requests & uploads.
 //   * Returns undefined for HTTP 204.
+// Rationale for separate bases:
+//   - Server (SSR / route handlers / actions) can call a private/internal hostname (e.g. http://backend:4000/api/v1) avoiding CORS & extra public hops.
+//   - Browser must use a publicly reachable, CORS-enabled URL (e.g. https://api.myapp.com/api/v1).
+//   - Keeping both lets you configure:
+//       LAYER1_API_URL = internal service DNS or container name
+//       NEXT_PUBLIC_API_BASE_URL = public API origin
+// NEXT_PUBLIC_ prefix note: any var starting with NEXT_PUBLIC_ is embedded into the browser bundle so client code can read it.
 
 const SERVER_API_BASE =
-  process.env.LAYER1_API_URL ?? "http://localhost:4000/api/v1";
+  process.env.LAYER1_API_URL ?? "http://localhost:4000/api/v1"; // Internal/server-only base (never exposed to browser)
 const CLIENT_API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000/api/v1"; // Public/browser base (NEXT_PUBLIC_ -> exposed to client bundle)
 
 /**
  * Build the absolute request URL for a given API path.

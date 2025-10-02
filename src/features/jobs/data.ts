@@ -69,6 +69,11 @@ export interface JobParsedSummary {
 export interface JobDetail extends JobSummary {
   parsedData: JobParsedSummary | null;
   requirements: JobRequirement[];
+  softSkills?: {
+    skill: string;
+    value?: number | null;
+    importance?: number | null;
+  }[];
 }
 
 /**
@@ -224,16 +229,57 @@ function transformJobDetail(data: JobDetailResponse): JobDetail {
     };
   }
 
-  return {
+  const result: JobDetail = {
     id: data.id,
     title: data.title,
     source: data.source,
     status: data.status,
     parsedData: parsedSummary,
-    requirements: (data.requirements || []).map(transformRequirement),
+    // Frontend safety: re-apply inferred importance threshold in case backend missed or threshold changed dynamically client-side.
+    requirements: (data.requirements || [])
+      .map(transformRequirement)
+      .filter((r) =>
+        r.inferred && r.importance != null
+          ? r.importance >=
+            (typeof process !== "undefined" &&
+            process.env.NEXT_PUBLIC_JOB_INFERRED_MIN_IMPORTANCE
+              ? parseFloat(
+                  process.env.NEXT_PUBLIC_JOB_INFERRED_MIN_IMPORTANCE as string
+                ) > 1
+                ? parseFloat(
+                    process.env
+                      .NEXT_PUBLIC_JOB_INFERRED_MIN_IMPORTANCE as string
+                  ) / 100
+                : parseFloat(
+                    process.env
+                      .NEXT_PUBLIC_JOB_INFERRED_MIN_IMPORTANCE as string
+                  )
+              : 0.7)
+          : true
+      ),
+    softSkills: (data.soft_skills || []).map((s) => ({
+      skill: s.skill,
+      value: s.value ?? (s as any).importance ?? null,
+      importance: s.value ?? (s as any).importance ?? null,
+    })),
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
+  if (typeof window !== "undefined") {
+    try {
+      // Development/debug logging; can be gated by env if needed
+      console.log("[jobs] JobDetail received", {
+        id: result.id,
+        requirements: result.requirements.length,
+        explicit: result.requirements.filter((r) => !r.inferred).length,
+        inferred: result.requirements.filter((r) => r.inferred).length,
+        softSkills: result.softSkills?.length || 0,
+      });
+    } catch {
+      /* ignore */
+    }
+  }
+  return result;
 }
 
 /**
@@ -304,10 +350,22 @@ export async function createJobFromFile(
   formData: FormData,
   token?: string | null
 ) {
+  // Ensure title field present (frontend validators should enforce, this is a safeguard)
+  if (!formData.get("title")) {
+    throw new Error("Job title is required.");
+  }
   const response = await backendUpload("/jobs", formData, { token });
   if (!response.ok) {
     const message = await response.text();
     throw new Error(message || "Failed to upload job file");
   }
   return response.json();
+}
+
+/**
+ * Soft delete a job by id.
+ * @param id Job identifier.
+ */
+export async function deleteJob(id: string, token?: string | null) {
+  await backendFetch(`/jobs/${id}`, { method: "DELETE" }, { token });
 }

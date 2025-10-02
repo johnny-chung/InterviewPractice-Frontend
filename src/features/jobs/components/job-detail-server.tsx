@@ -1,20 +1,21 @@
-// filepath: c:\Users\johnn\Desktop\Project\interview-practice\frontend\src\features\jobs\components\job-detail-server.tsx
 import { getJobDetail, type JobDetail } from "@/features/jobs/data";
-import { JobDetailPanel } from "./job-detail";
+import { JobDetailRealtime } from "./job-detail-realtime";
 
 interface Props {
   id: string | null;
   token?: string;
   disabled?: boolean;
 }
-
 export async function JobDetailFetcher({ id, token, disabled }: Props) {
-  if (!id || disabled) return <JobDetailPanel job={undefined} />;
+  if (!id || disabled)
+    return (
+      <JobDetailRealtime jobId={null} token={token} initialJob={undefined} />
+    );
   let job: JobDetail | undefined;
   try {
     job = await getJobDetail(id, token);
   } catch {
-    // swallow
+    // swallow fetch errors; realtime layer may later succeed
   }
-  return <JobDetailPanel job={job} />;
+  return <JobDetailRealtime jobId={id} token={token} initialJob={job} />;
 }

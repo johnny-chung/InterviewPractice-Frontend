@@ -26,6 +26,7 @@ export const authConfig = {
   callbacks: {
     async jwt({ token, account, profile }) {
       if (account?.access_token) {
+        console.debug("account: ", account);
         token.accessToken = account.access_token;
         token.accessTokenExpires = account.expires_at ?? null;
       }
@@ -43,6 +44,11 @@ export const authConfig = {
       if (session.user) {
         session.user.accessToken = token.accessToken as string | undefined;
         session.user.proMember = Boolean(token.proMember);
+      }
+      if (token?.accessTokenExpires) {
+        session.expires = new Date(
+          (token.accessTokenExpires as number) * 1000
+        ).toISOString() as Date & string;
       }
       return session;
     },

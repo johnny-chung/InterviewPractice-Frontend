@@ -273,16 +273,31 @@ export async function requestMatch(
   payload: { resumeId: string; jobId: string },
   token?: string | null
 ) {
-  return backendFetch(
-    "/matches",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        resumeId: payload.resumeId,
-        jobId: payload.jobId,
-      }),
-    },
-    { token }
-  );
+  try {
+    return await backendFetch(
+      "/matches",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resumeId: payload.resumeId,
+          jobId: payload.jobId,
+        }),
+      },
+      { token }
+    );
+  } catch (err: any) {
+    // backendFetch likely throws Response text; attempt to parse upgrade_required
+    if (err && typeof err === "object" && "message" in err) {
+      try {
+        const data = JSON.parse(String(err.message));
+        if (data?.error === "upgrade_required") {
+          throw new Error("upgrade_required");
+        }
+      } catch {
+        // ignore JSON parse failure
+      }
+    }
+    throw err;
+  }
 }

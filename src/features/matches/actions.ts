@@ -25,6 +25,15 @@ export async function createMatchAction(formData: FormData) {
       "Select both a resume and a job before requesting a match."
     );
   }
-  await requestMatch({ resumeId, jobId }, token);
+  try {
+    await requestMatch({ resumeId, jobId }, token);
+  } catch (err: any) {
+    if (err instanceof Error && err.message === "upgrade_required") {
+      throw new Error(
+        "You've reached the free annual limit. Upgrade to Pro for unlimited matches."
+      );
+    }
+    throw err;
+  }
   revalidatePath("/dashboard");
 }

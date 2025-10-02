@@ -23,6 +23,9 @@ import { createJobFromFile, createJobFromText } from "./data";
 export async function submitJobFromText(formData: FormData) {
   const session = await auth();
   const token = session?.user?.accessToken;
+  if (!formData.get("title") || !String(formData.get("title")).trim()) {
+    throw new Error("Job title is required.");
+  }
   if (!formData.get("description_text") && !formData.get("text")) {
     throw new Error("Provide a job description before submitting.");
   }
@@ -40,6 +43,9 @@ export async function submitJobFromText(formData: FormData) {
 export async function submitJobFromFile(formData: FormData) {
   const session = await auth();
   const token = session?.user?.accessToken;
+  if (!formData.get("title") || !String(formData.get("title")).trim()) {
+    throw new Error("Job title is required.");
+  }
   if (!formData.get("file")) {
     throw new Error("Select a job description file before uploading.");
   }

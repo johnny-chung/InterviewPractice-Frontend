@@ -196,3 +196,11 @@ export async function uploadResume(formData: FormData, token?: string | null) {
   }
   return response.json();
 }
+
+/**
+ * Soft delete a resume by id.
+ * @param id Resume identifier.
+ */
+export async function deleteResume(id: string, token?: string | null) {
+  await backendFetch(`/resumes/${id}`, { method: "DELETE" }, { token });
+}

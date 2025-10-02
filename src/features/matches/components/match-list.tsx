@@ -42,7 +42,7 @@ export function MatchList({ items, selectedId }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 w-full flex-1">
       {items.map((item) => (
         <button
           key={item.id}

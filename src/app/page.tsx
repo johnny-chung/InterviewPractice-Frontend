@@ -11,7 +11,11 @@ async function handleSignIn() {
 
 export default async function HomePage() {
   const session = await auth();
-  if (session) {
+  console.log("session at home page", session);
+  if (
+    session ||
+    (session?.expires && new Date(session.expires).getTime() > Date.now())
+  ) {
     redirect("/dashboard");
   }
 
@@ -26,7 +30,8 @@ export default async function HomePage() {
           Accelerate candidate-job matching with Layer1 insights
         </h1>
         <p className="text-lg text-muted-foreground">
-          Upload resumes and job descriptions, compute AI-driven matches, and manage subscription access from a unified console.
+          Upload resumes and job descriptions, compute AI-driven matches, and
+          manage subscription access from a unified console.
         </p>
       </div>
       <form action={handleSignIn}>
